@@ -1,24 +1,35 @@
-name: checkov
+name: Checkov Compliance Analysis
 
 on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+    
   workflow_dispatch:
 
 jobs:
-  terraform:
-    name: terraform CI
+  checkov:
+    name: Checkov Analysis
     runs-on: ubuntu-latest
+    
+    permissions:
+      contents: read # for actions/checkout to fetch code
+      security-events: write # for github/codeql-action/upload-sarif to upload SARIF results
+      actions: read # only required for a private repository by github/codeql-action/upload-sarif to get the Action run status
 
     steps:
-      - uses: actions/checkout@v2
-      - uses: hashicorp/setup-terraform@v1
-
-      - name: terraform plan
-        id: plan
-        run: |
-          terraform init && terraform plan -out=plan.out && terraform show -json plan.out > plan.out.json
+      - name: Checkout repository
+        uses: actions/checkout@v4
       
-      - name: terraform-compliance
-        uses: terraform-compliance/github_action@main
+      - name: Run Checkov Action
+        uses: bridgecrewio/checkov-action@v12
         with:
-          plan: plan.out.json
-          features: ssh://git@github.com/terraform-compliance/user-friendly-features.git
+          output_format: cli,sarif
+          output_file_path: console,results.sarif
+
+      - name: Upload SARIF file
+        uses: github/codeql-action/upload-sarif@v3
+        if: success() || failure()
+        with:
+          sarif_file: results.sarif
