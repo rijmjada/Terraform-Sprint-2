@@ -20,7 +20,7 @@ jobs:
     
     - name: Scan for secrets
       run: |
-        trufflehog git https://github.com/rijmjada/Terraform-Sprint-2 --json --only-verified --fail > secrets_report.json
+        trufflehog git --json --only-verified --fail https://github.com/rijmjada/Terraform-Sprint-2 > secrets_report.json
 
     
     - name: Upload report
