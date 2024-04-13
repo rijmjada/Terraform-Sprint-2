@@ -4,14 +4,26 @@ on:
   workflow_dispatch:
 
 jobs:
-  test:
+  scan_secrets:
+    name: Scan Repository for Secrets
     runs-on: ubuntu-latest
+    
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v2
+      
+    - name: Install TruffleHog
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y python3-pip
+        pip3 install trufflehog
+    
+    - name: Scan for secrets
+      run: |
+        trufflehog git --org=https://github.com/${{ github.repository }} --only-verified --fail --json > secrets_report.json
+    
+    - name: Upload report
+      uses: actions/upload-artifact@v2
       with:
-        fetch-depth: 0
-    - name: Secret Scanning
-      uses: trufflesecurity/trufflehog@main
-      with:
-        extra_args: --only-verified
+        name: secrets-report
+        path: secrets_report.json
